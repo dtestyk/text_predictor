@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  textarea#content{
+    display:block;  
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: #eee;
+    width: 100%;
+    height: 100%;
+
+  }
+</style>
+</head>
+<body>
+  <textarea id='content' tabindex=0>hello wo</textarea>
+  <script defer='defer'>
+    var predictor_url = "https://predictor.yandex.net/api/v1/predict.json/complete"
+      +"?key=pdct.1.1.20131208T103811Z.c68065bdf43dcf70.3164250575231fd76339fd7445ffd30acb6a3c1a"
+      +"&lang=en&limit=5&q="
+  
+    var ocontent = document.querySelector("textarea#content")
+    var accept_length
+    var json
+    var i_variant = 0
+    function accept(){
+      accept_length = ocontent.value.length
+      i_variant = 0
+    }
+    
+    function reject(){
+      ocontent.value = ocontent.value.substr(0,accept_length)
+      i_variant = 0
+    }
+  
+    function next_append(must_reverse_order){
+      var str = ocontent.value
+      str += ' '
+      str = str.substr(0,accept_length+json.pos)
+      var str_append = json.text[i_variant]
+      var n = json.text.length
+      i_variant += must_reverse_order? n-1: 1
+      i_variant%=n
+      if(str_append){
+        str += str_append
+      }
+      ocontent.value = str
+    }
+    
+    function on_json_loaded(must_reverse_order, json_in){
+      json = json_in
+      next_append(must_reverse_order)
+    }
+    
+    function next_complite(must_reverse_order){
+      var str_content = ocontent.value
+      var is_complite = accept_length == str_content.length
+      if(is_complite){
+        var str_request = predictor_url + encodeURIComponent(str_content)
+        $.getJSON(str_request, on_json_loaded.bind(null, must_reverse_order))
+      }else{
+        next_append(must_reverse_order)
+      }
+    }
+    
+    accept()
+  
+    ocontent.onkeydown = function(e) {
+        if(e.which==9&&!e.metaKey&&!e.altKey){
+          next_complite(e.shiftKey)
+          return false
+        }else if(e.which==27&&!e.metaKey&&!e.altKey){
+          reject()
+          return false
+        }
+        return true
+    }
+    ocontent.onkeyup = function(e) {
+        if(e.which!=9&&!e.metaKey&&!e.altKey){
+          accept()
+        }
+    }
+  </script>
+</body>
+</html>
